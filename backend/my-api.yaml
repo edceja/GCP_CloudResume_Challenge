@@ -1,0 +1,24 @@
+# openapi2-run.yaml
+swagger: '2.0'
+info:
+  title: myapi crc-api
+  description: Sample API on API Gateway with a Cloud Run backend
+  version: 1.0.0
+schemes:
+- https
+produces:
+- application/json
+x-google-backend:
+  address: https://us-central1-crcbackend2.cloudfunctions.net/function-1
+paths:
+  /test:
+    get:
+      summary: Total number of visitors
+      operationId: test
+      x-google-backend:
+        address: https://us-central1-crcbackend2.cloudfunctions.net/function-1
+      responses:
+        '200':
+          description: A successful response
+          schema:
+            type: string
