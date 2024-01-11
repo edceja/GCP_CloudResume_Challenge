@@ -3,7 +3,6 @@
 # Create bucket to store Terraform state 
 #---------------------------------------
 
-
 resource "google_storage_bucket" "default" {
   name          = "terraform_state_bucket55"
   project = "crcbackend2"
@@ -111,14 +110,13 @@ resource "google_compute_url_map" "default" {
   }
 }
 
-# Create HTTP target proxy 
+#HTTP target proxy 
 resource "google_compute_target_http_proxy" "default" {
   name    = "http-lb-proxy"
   url_map = google_compute_url_map.default.id
   project =  "crcfrontend2"
 
 }
-
 
 #HTTPS proxy 
 resource "google_compute_target_https_proxy" "lb_default" {
