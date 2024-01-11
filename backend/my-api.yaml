@@ -1,4 +1,5 @@
 # openapi2-run.yaml
+# API configuration file for my-api 
 swagger: '2.0'
 info:
   title: myapi crc-api
@@ -9,14 +10,14 @@ schemes:
 produces:
 - application/json
 x-google-backend:
-  address: https://us-central1-crcbackend2.cloudfunctions.net/function-1
+  address: #public API gateway URL goes here
 paths:
   /test:
     get:
       summary: Total number of visitors
       operationId: test
       x-google-backend:
-        address: https://us-central1-crcbackend2.cloudfunctions.net/function-1
+        address: #public API gateway URL goes here 
       responses:
         '200':
           description: A successful response
