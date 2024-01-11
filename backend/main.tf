@@ -60,6 +60,87 @@ resource "google_storage_bucket_access_control" "public_rule" {
   entity = "allUsers"
 }
 
+#---------------------------------
+#SSL Certificate and Load Balancer
+#----------------------------------
+
+#Create SSL Certificate
+resource "google_compute_managed_ssl_certificate" "lb_default" {
+  name     = "myservice-ssl-cert"
+  project = "crcfrontend2"
+
+  managed {
+    domains = ["ceja.me"]
+  }
+}
+
+# Reserve IP address
+resource "google_compute_global_address" "default" {
+  name = "example-ip"
+  project =  "crcfrontend2"
+
+}
+
+# Create LB backend buckets
+resource "google_compute_backend_bucket" "bucket_1" {
+  name        = "website"
+  description = "Contains CRC website files"
+  project =  "crcfrontend2"
+
+  bucket_name = google_storage_bucket.my_website_bucket55.name
+}
+
+# Create url map
+resource "google_compute_url_map" "default" {
+  name = "http-lb"
+  project =  "crcfrontend2"
+  default_service = google_compute_backend_bucket.bucket_1.id
+
+  host_rule {
+    hosts        = ["*"]
+    path_matcher = "ceja"
+  }
+  path_matcher {
+    name            = "ceja"
+    default_service = google_compute_backend_bucket.bucket_1.id
+
+    path_rule {
+      paths   = ["/index.html"]
+      service = google_compute_backend_bucket.bucket_1.id
+    }
+  }
+}
+
+# Create HTTP target proxy 
+resource "google_compute_target_http_proxy" "default" {
+  name    = "http-lb-proxy"
+  url_map = google_compute_url_map.default.id
+  project =  "crcfrontend2"
+
+}
+
+
+#HTTPS proxy 
+resource "google_compute_target_https_proxy" "lb_default" {
+  name     = "myservice-https-proxy"
+  url_map  = google_compute_url_map.default.id
+  project               = "crcfrontend2"
+  ssl_certificates = [
+    google_compute_managed_ssl_certificate.lb_default.name
+  ]
+}
+
+# Create forwarding https rule
+resource "google_compute_global_forwarding_rule" "https-lb-forwarding-rule" {
+  name                  = "https-lb-forwarding-rule"
+  ip_protocol           = "TCP"
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+  port_range            = "443"
+  project               = "crcfrontend2"
+  target                = google_compute_target_https_proxy.lb_default.id
+  ip_address            = google_compute_global_address.default.id
+}
+
 
 #--------------------------------------------------
 # Deploy Cloud Function to serve as website counter 
@@ -150,83 +231,3 @@ resource "google_api_gateway_gateway" "api_gw" {
 
 }
 
-#---------------------------------
-#SSL Certificate and Load Balancer
-#----------------------------------
-
-#Create SSL Certificate
-resource "google_compute_managed_ssl_certificate" "lb_default" {
-  name     = "myservice-ssl-cert"
-  project = "crcfrontend2"
-
-  managed {
-    domains = ["ceja.me"]
-  }
-}
-
-# Reserve IP address
-resource "google_compute_global_address" "default" {
-  name = "example-ip"
-  project =  "crcfrontend2"
-
-}
-
-# Create LB backend buckets
-resource "google_compute_backend_bucket" "bucket_1" {
-  name        = "website"
-  description = "Contains CRC website files"
-  project =  "crcfrontend2"
-
-  bucket_name = google_storage_bucket.my_website_bucket55.name
-}
-
-# Create url map
-resource "google_compute_url_map" "default" {
-  name = "http-lb"
-  project =  "crcfrontend2"
-  default_service = google_compute_backend_bucket.bucket_1.id
-
-  host_rule {
-    hosts        = ["*"]
-    path_matcher = "ceja"
-  }
-  path_matcher {
-    name            = "ceja"
-    default_service = google_compute_backend_bucket.bucket_1.id
-
-    path_rule {
-      paths   = ["/index.html"]
-      service = google_compute_backend_bucket.bucket_1.id
-    }
-  }
-}
-
-# Create HTTP target proxy 
-resource "google_compute_target_http_proxy" "default" {
-  name    = "http-lb-proxy"
-  url_map = google_compute_url_map.default.id
-  project =  "crcfrontend2"
-
-}
-
-
-#HTTPS proxy 
-resource "google_compute_target_https_proxy" "lb_default" {
-  name     = "myservice-https-proxy"
-  url_map  = google_compute_url_map.default.id
-  project               = "crcfrontend2"
-  ssl_certificates = [
-    google_compute_managed_ssl_certificate.lb_default.name
-  ]
-}
-
-# Create forwarding https rule
-resource "google_compute_global_forwarding_rule" "https-lb-forwarding-rule" {
-  name                  = "https-lb-forwarding-rule"
-  ip_protocol           = "TCP"
-  load_balancing_scheme = "EXTERNAL_MANAGED"
-  port_range            = "443"
-  project               = "crcfrontend2"
-  target                = google_compute_target_https_proxy.lb_default.id
-  ip_address            = google_compute_global_address.default.id
-}
