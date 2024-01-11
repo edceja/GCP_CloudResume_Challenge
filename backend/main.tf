@@ -1,7 +1,7 @@
 
 #-----------------------------------------
-# #Create bucket to store Terraform state 
-# #---------------------------------------
+# Create bucket to store Terraform state 
+#---------------------------------------
 
 
 resource "google_storage_bucket" "default" {
@@ -16,9 +16,10 @@ resource "google_storage_bucket" "default" {
 
 }
 
-#--------------------------
+#----------------------------------
 #Create the website storage buckett
-#--------------------------
+#and upload webpage files 
+#----------------------------------
 
 resource "google_storage_bucket" "my_website_bucket55" {
 
@@ -34,9 +35,6 @@ resource "google_storage_bucket" "my_website_bucket55" {
   }
 }
 
-
-
-# Upload an index.html page to the bucket
 resource "google_storage_bucket_object" "indexpage" {
   name         = "index.html"
   source      = "resumes/index.html"
@@ -44,7 +42,6 @@ resource "google_storage_bucket_object" "indexpage" {
   bucket       = google_storage_bucket.my_website_bucket55.id
 }
 
-# Upload a 404 / error page to the bucket
 resource "google_storage_bucket_object" "errorpage" {
   name         = "errorpage.html"
   source       = "resumes/errorpage.html"
@@ -53,10 +50,10 @@ resource "google_storage_bucket_object" "errorpage" {
 }
 
 
-
 #------------------------------------------------------
 # Make bucket public by granting allUsers READER access
 #------------------------------------------------------
+
 resource "google_storage_bucket_access_control" "public_rule" {
   bucket = google_storage_bucket.my_website_bucket55.id
   role   = "READER"
@@ -64,10 +61,9 @@ resource "google_storage_bucket_access_control" "public_rule" {
 }
 
 
-
 #--------------------------------------------------
 # Deploy Cloud Function to serve as website counter 
-# -------------------------------------------------
+#-------------------------------------------------
 
 resource "google_storage_bucket" "my_function_bucket" {
   project = "crcbackend2"
@@ -90,7 +86,7 @@ resource "google_storage_bucket_object" "my_func" {
   bucket       = google_storage_bucket.my_function_bucket.id
 }
 
-#Function source code. 
+
 resource "google_cloudfunctions_function" "function-1" {
   name        = "function-1"
   description = "http trigerred cloud function to update datastore"
@@ -104,7 +100,10 @@ resource "google_cloudfunctions_function" "function-1" {
   entry_point           = "test"
 }
 
+#-----------------------------------------------
 # IAM entry for all users to invoke the function
+#------------------------------------------------
+
 resource "google_cloudfunctions_function_iam_member" "invoker" {
   project        = google_cloudfunctions_function.function-1.project
   region         = google_cloudfunctions_function.function-1.region
@@ -114,10 +113,9 @@ resource "google_cloudfunctions_function_iam_member" "invoker" {
   member = "allUsers"
 }
 
-
-#-------------------------------------------------------
-# Create API gateway 
-#-------------------------------------------------------
+#--------------------
+# API gateway 
+#--------------------
 
 resource "google_api_gateway_api" "api_gw" {
   provider = google-beta
@@ -152,9 +150,9 @@ resource "google_api_gateway_gateway" "api_gw" {
 
 }
 
-#--------------------------------
-#SSL Certificate and Load Balancer
 #---------------------------------
+#SSL Certificate and Load Balancer
+#----------------------------------
 
 #Create SSL Certificate
 resource "google_compute_managed_ssl_certificate" "lb_default" {
